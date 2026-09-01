@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+
+<link rel="stylesheet" href="{{ url_for('static', path='netflix.css') }}">
+{% endblock extra_css %}
+
+{% block content %}
+
+<header id="the-header">
+    <div class="container">
+        <h1>
+            <br>
+            WELCOME<br>
+            TO OUR<br>
+            CLONED NETFLIX
+        </h1>
+    </div>
+</header>
+
+<img
+id="main-header"
+src="{{ url_for('static', path='logo.png') }}"
+alt="Netflix Logo">
+
+<div class="button-container">
+    <a href="/create-profile" class="button">Create Account</a>
+    <a href="/welcome" class="button">Login</a>
+</div>
+
+{% endblock content %}

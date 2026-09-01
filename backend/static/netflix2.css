@@ -1,0 +1,52 @@
+
+#the-header{
+  height: auto;
+    text-align: center;
+}
+
+#the-header img{
+    height: 200px;
+    width: 250px;
+    margin: 0;
+    filter: contrast(100%) brightness(100%) saturate(100%);
+    mix-blend-mode: screen; /* or 'lighten' */
+}
+body {
+    background: linear-gradient(to bottom, black, #8B0000);
+  margin: 0;
+}
+
+
+.my-form {
+  padding: 20px;
+  text-align: center;
+  
+}
+
+.my-form .form-group {
+  padding-bottom: 15px;
+}
+
+.my-form label {
+  display: block;  /* This makes the label take up the full width of its container, so that the input field will be on a new line */
+  margin-bottom: 5px;
+}
+
+.my-form input {
+  box-sizing: border-box;
+}
+
+
+.my-form .submit-button {
+  padding: 10px 20px;
+  background-color: black;
+  color: red;
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.my-form .submit-button:hover {
+  background-color: red;
+  color: black;
+}

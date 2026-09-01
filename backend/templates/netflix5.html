@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', path='profile.css') }}">
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+{% endblock extra_css %}
+
+{% block content %}
+
+<nav role="navigation" aria-label="Main">
+    <a href="/" class="logo">NETFLIX</a>
+<div class="account-label">
+    My Account
+</div>
+
+</nav>
+<main>
+
+<!-- PROFILE HERO -->
+<section class="profile-hero" aria-label="Profile Header">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <article class="profile-card">
+        <div class="avatar-wrapper">
+            <img
+                class="avatar"
+                src="{{ user.avatar.image_path if user.avatar else '/static/avatars/avatar.png' }}"
+                alt="Profile avatar">
+            <span
+                class="avatar-badge"
+                aria-label="Active profile"
+                title="Active profile">
+                <i class="fa-solid fa-crown"></i>
+            </span>
+        </div>
+
+        <p class="greeting"> <span class="dot" aria-hidden="true"></span> Welcome back, </p>
+        <h1 class="username">
+          {{ user.user_name }}
+        </h1>
+
+        <div class="meta-row">
+            <span> <i class="fa-regular fa-envelope"></i> {{ user.email }} </span>
+            <span> <i class="fa-solid fa-phone"></i> {{ user.phone_number }} </span>
+        </div>
+
+        <!-- Movies Watched -->
+        <div class="stats-row" aria-label="Account statistics">
+            <div class="stat">
+              <strong> {{ movies|length }} </strong>
+                <small> Movies Watched </small>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="openModal()">
+          <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+        </button>
+    </article>
+</section>
+
+<!-- WATCH HISTORY -->
+<section
+    class="watch-section"
+    aria-label="Watch History">
+    <div class="section-header">
+        <h2> Continue Watching </h2>
+        <a href="#"> See All <i class="fa-solid fa-arrow-right"></i> </a>
+    </div>
+
+    <div
+      class="history-scroll"
+      role="list"
+      aria-label="Movies watched">
+      {% for movie in movies %}
+      <article class="hist-card" role="listitem" tabindex="0">
+        <img src="{{ movie.poster }}" alt="{{ movie.title }}" loading="lazy">
+        <div class="hist-overlay">
+          <h3> {{ movie.title }} </h3>
+          <span class="date"> Watched {{ movie.watched_at }} </span>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+</section>
+
+</main>
+
+<footer>
+  Netflix • Profile Page • Built with Postgres & Passion
+</footer>
+
+<!-- EDIT MODAL -->
+
+<div
+  class="modal-backdrop"
+  id="editModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modalTitle"
+  onclick="if(event.target === this) closeModal()"> </div>
+<div class="modal" onclick="event.stopPropagation()">
+
+    <div class="modal-header">
+        <h2 id="modalTitle">
+          Edit Profile
+        </h2>
+
+        <button
+          class="modal-close"
+          onclick="closeModal()"
+          aria-label="Close edit modal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <form
+        onsubmit="event.preventDefault(); saveProfile(); closeModal();"
+        aria-label="Edit profile form">
+
+        <div class="form-group">
+            <label for="editName">
+              Display Name
+            </label>
+
+            <input
+              type="text"
+              id="editName"
+              value="{{ user.user_name }}">
+        </div>
+
+        <div class="form-group">
+            <label for="editEmail">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="editEmail"
+              value="{{ user.email }}">
+        </div>
+
+        <div class="form-group">
+            <label for="editPhone">
+              Phone Number
+            </label>
+
+            <input
+                type="tel"
+                id="editPhone"
+                value="{{ user.phone_number }}">
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-full">
+            <i class="fa-solid fa-check"></i>
+            Save Changes
+        </button>
+    </form>
+</div>
+
+{% endblock content %}
+
+{% block extra_js %}
+
+<script src="{{ url_for('static', path='profile.js') }}"></script>
+
+{% endblock extra_js %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+
+<link rel="stylesheet"
+    href="{{ url_for('static', path='netflix2.css') }}">
+{% endblock extra_css %}
+
+{% block content %}
+
+<header id="the-header">
+    <img src="{{ url_for('static', path='logo.png') }}" alt="Netflix Logo">
+</header>
+
+<form class="my-form" action="/created-profile" method="POST">
+
+<div class="form-group">
+    <label for="email">Email:</label>
+    <input
+        type="email"
+        id="email"
+        name="email"
+        placeholder="Enter your email"
+        required
+    >
+</div>
+
+<div class="form-group">
+    <label for="username">Username:</label>
+    <input
+        type="text"
+        id="username"
+        name="username"
+        placeholder="Enter your username"
+        required
+    >
+</div>
+
+<div class="form-group">
+    <label for="phone_number">Phone Number:</label>
+    <input
+        type="tel"
+        id="phone_number"
+        name="phone_number"
+        placeholder="Enter your phone number"
+        required
+    >
+</div>
+
+<div class="form-group">
+    <label for="password">Password:</label>
+    <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Enter your password"
+        required
+    >
+</div>
+
+<div class="form-group">
+    <label for="confirm_password">Confirm Password:</label>
+    <input
+        type="password"
+        id="confirm_password"
+        name="confirm_password"
+        placeholder="Confirm your password"
+        required
+    >
+</div>
+
+<button class="submit-button" type="submit">
+    Submit
+</button>
+
+</form>
+{% endblock content %}
