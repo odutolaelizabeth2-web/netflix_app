@@ -6,10 +6,6 @@ line-height: 1.6;
 font-size: 16px;
 }
 
-/* .container {
-position: relative;
-} */
-
 #the-header {
 display: flex;
 align-items: center;
@@ -52,11 +48,42 @@ left: 20px;
 bottom: 20px;
 }
 
+/* ================================
+   NETFLIX INTRO SCREEN
+================================ */
+
+#intro-screen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 1s ease;
+}
+
+/* Intro video */
+#intro-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Fade out after video */
+#intro-screen.hide-intro {
+    opacity: 0;
+    pointer-events: none;
+}
+
 @media (max-width: 600px) {
 
-#the-header h1 {
-    font-size: 34px;
+#the-header h1 { font-size: 34px; }
 }
 
 
-}
+

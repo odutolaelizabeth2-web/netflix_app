@@ -5,24 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    {% if title %}
+        <title>Netflix - {{ title }}</title>
+    {% else %}
+        <title>Netflix</title>
+    {% endif %}
 
-{% if title %}
-    <title>Netflix - {{ title }}</title>
-{% else %}
-    <title>Netflix</title>
-{% endif %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="{{ url_for('static', path='netflix.css') }}">
 
-<!-- Netflix CSS -->
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', path='netflix.css') }}">
-
-{% block extra_css %}
-{% endblock extra_css %}
+    {% block extra_css %}
+    {% endblock extra_css %}
 
 </head>
+
 <body>
 
-{% block content %}
-{% endblock content %}
+
+<!-- PAGE CONTENT -->
+<div id="page-content">
+    {% block content %}
+    {% endblock content %}
+</div>
 
 {% block extra_js %}
 {% endblock extra_js %}

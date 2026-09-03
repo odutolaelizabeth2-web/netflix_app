@@ -7,6 +7,21 @@
 
 {% block content %}
 
+
+<!-- NETFLIX INTRO-->
+
+<div id="intro-screen">
+    <video
+        id="intro-video"
+        autoplay
+        muted
+        playsinline>
+        <source
+            src="{{ url_for('static', path='netflix_intro.mp4') }}"
+            type="video/mp4">
+    </video>
+</div>
+
 <header id="the-header">
     <div class="container">
         <h1>
@@ -27,5 +42,54 @@ alt="Netflix Logo">
     <a href="/create-profile" class="button">Create Account</a>
     <a href="/welcome" class="button">Login</a>
 </div>
-
 {% endblock content %}
+
+{% block extra_js %}
+
+<script>
+   /* // Hide intro screen after video ends  
+    document.addEventListener("DOMContentLoaded", function () {
+    const introScreen = document.getElementById("intro-screen");
+    const introVideo = document.getElementById("intro-video");
+    if (!introScreen || !introVideo) {
+        return;
+    }
+/* introVideo.addEventListener("ended", function () {
+        introScreen.classList.add("hide-intro");
+        setTimeout(function () {
+            introScreen.remove();
+        }, 1000);
+    });*/
+/*    introVideo.addEventListener("ended", function () {
+       introScreen.style.display = "none";
+    });
+   });*/
+    document.addEventListener("DOMContentLoaded", function () {
+        const introScreen = document.getElementById("intro-screen");
+        const introVideo = document.getElementById("intro-video");
+
+        if (!introScreen || !introVideo) {
+            return;
+        }
+
+        function hideIntro() {
+            introScreen.style.display = "none";
+        }
+
+        introVideo.addEventListener("ended", hideIntro);
+        introVideo.addEventListener("error", hideIntro);
+
+        // Fallback in case the browser does not trigger "ended".
+        introVideo.addEventListener("loadedmetadata", function () {
+            if (Number.isFinite(introVideo.duration)) {
+                setTimeout(hideIntro, introVideo.duration * 1000 + 500);
+            }
+        });
+
+        introVideo.play().catch(function () {
+            hideIntro();
+        });
+    });
+</script>
+
+{% endblock extra_js %}

@@ -213,7 +213,6 @@ async function searchMovies() {
             throw new Error("Unable to load movies.");
         }
 
-
         const movies = await response.json();
 
 

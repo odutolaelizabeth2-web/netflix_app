@@ -12,11 +12,15 @@
 class="image" 
 src="{{ url_for('static', path='background2.jpg') }}" 
 alt="Netflix Background"> 
+
+{% if error %} 
+    <p id= "login-error" class="login-error">{{ error }}</p> 
+{% endif %} 
  
 <h1 class="welcome-text"> 
     Welcome Back 
 </h1> 
-<br/> 
+
 <img 
 class="netflix-logo" 
 src="{{ url_for('static', path='logo.png') }}" 
@@ -44,17 +48,10 @@ alt="Netflix Logo">
         placeholder="Enter your password" 
         required> 
 </div> 
-<br> 
-{% if error %} 
-    <p id= "login-error" class="login-error">{{ error }}</p> 
-{% endif %} 
-<br/> 
- 
+
 <button class="submit-button" type="submit"> 
     Submit 
 </button> 
 </form> 
- 
-<!-- <script src="{{ url_for('static', path='netflix4.js') }}"></script> --> 
- 
+  
 {% endblock content %}

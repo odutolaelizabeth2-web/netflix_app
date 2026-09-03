@@ -1,83 +1,223 @@
+/* ================================
+   LOGIN PAGE
+================================ */
 body {
     margin: 0;
     min-height: 100vh;
     overflow: hidden;
     background: black;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Background image */
+/* ================================
+   BACKGROUND IMAGE
+================================ */
 .image {
     position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: blur(1.5px);
-    transform: scale(1.05);
+    /* Makes the movie posters blurry */
+    filter: blur(2px);
+    /* Prevents white edges caused by blur */
+    transform: scale(1.04);
     z-index: 0;
 }
 
-/* Black overlay */
+/* ================================
+   DARK OVERLAY
+================================ */
 body::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.58);
     z-index: 1;
+    pointer-events: none;
 }
 
-/* Netflix logo */
+
+/* ================================
+   NETFLIX LOGO
+================================ */
 .netflix-logo {
     position: fixed;
-    top: 20px;
-    left: 30px;
-    width: 100px;
+    top: 60px;
+    left: 25px;
+    width: 250px;
     height: auto;
     z-index: 10;
 }
 
-/* Welcome text */
+/* ================================
+   WELCOME BACK
+================================ */
 .welcome-text {
-    position: absolute;
-    top: 0.5%;
-    color: white;
-    z-index: 10;
-    text-align: center;
+    position: fixed;
+    top: 160px;
+    left: 0;
     width: 100%;
-    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    font-size: clamp(4rem, 10vw, 8rem);
-}
-                 
-/* Login form */
-.my-form {
-    position: absolute;
-    bottom: 10%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(90%, 24rem);
-    box-sizing: border-box;
-    padding: 1.25rem;
+    margin: 0;
+    padding: 0;
+    color: white;
     text-align: center;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: clamp(4rem, 7vw, 7rem);
+    font-weight: 700;
+    line-height: 1;
     z-index: 10;
 }
 
-.my-form .submit-button {
-    padding: 10px 20px;
-    background-color: black;
-    color: red;
-    border: none;
-    cursor: pointer;
-    border-radius: 10px;
+/* ================================
+   LOGIN FORM
+================================ */
+.my-form {
+    position: fixed;
+    top: 317px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;
+    box-sizing: border-box;
+    z-index: 10;
 }
 
-.my-form .submit-button:hover {
-    background-color: red;
-    color: black;
+/* ================================
+   INPUT CONTAINER
+================================ */
+.form-group {
+    width: 100%;
 }
 
+/* ================================
+   INPUTS
+================================ */
+.my-form input {
+    width: 100%;
+    height: 52px;
+    box-sizing: border-box;
+    padding: 0 15px;
+    border: 1px solid #777;
+    border-radius: 12px;
+    outline: none;
+    background: rgba(15, 23, 35, 0.92);
+    color: white;
+    font-size: 15px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Placeholder text */
+
+.my-form input::placeholder {
+    color: #d0d0d0;
+    opacity: 1;
+}
+
+/* Input when clicked */
+.my-form input:focus {
+    border-color: white;
+    background: rgba(15, 23, 35, 0.98);
+}
+
+/* ================================
+   SPACING BETWEEN INPUTS
+================================ */
+.my-form br {
+    line-height: 8px;
+}
+
+/* ================================
+   LOGIN ERROR
+================================ */
 .login-error {
-    color: #ff4d4d;
-    text-align: center;
-    margin-bottom: 15px;
+    position: fixed;
+    top: 105px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 334px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 14px 16px;
+    background: #d90812;
+    color: white;
+    border-radius: 8px;
     font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+    z-index: 100;
+}
+
+/* Error icon */
+.login-error::before {
+    content: "!";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: white;
+    color: #d90812;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+/* ================================
+   SUBMIT BUTTON
+================================ */
+.my-form .submit-button {
+    display: block;
+    width: 100%;
+    height: 50px;
+    margin-top: 15px;
+    padding: 0;
+    border: none;
+    border-radius: 12px;
+    background: #e50914;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+/* Button hover */
+.my-form .submit-button:hover {
+    background: #f40612;
+    color: white;
+}
+
+/* Button click */
+.my-form .submit-button:active {
+    transform: scale(0.99);
+}
+
+/* ================================
+   RESPONSIVE DESIGN
+================================ */
+@media (max-width: 600px) {
+    .netflix-logo {
+        top: 30px;
+        left: 30px;
+        width: 32px;
+    }
+
+    .welcome-text {
+        top: 150px;
+
+        font-size: 3.2rem;
+    }
+
+    .my-form {
+        top: 260px;
+
+        width: calc(100% - 40px);
+        max-width: 360px;
+    }
+
+    .login-error {
+        width: 100%;
+    }
 }

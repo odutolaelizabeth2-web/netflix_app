@@ -155,7 +155,7 @@ def login(
             name="netflix3.html",
             context={
                 "request": request,
-                "error": "Invalid email or password"
+                "error": "Invalid Credentials"
             },
             status_code=400 )
 
@@ -343,7 +343,6 @@ def general_http_exception_handler(request: Request, exception: StarletteHTTPExc
         },
         status_code= exception.status_code,
     )
-
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler (request: Request, exception: RequestValidationError):

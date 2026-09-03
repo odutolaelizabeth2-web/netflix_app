@@ -1,52 +1,110 @@
-
-#the-header{
+#the-header {
   height: auto;
-    text-align: center;
+  text-align: center;
+  padding: 30px 0 10px;
 }
 
-#the-header img{
-    height: 200px;
-    width: 250px;
-    margin: 0;
-    filter: contrast(100%) brightness(100%) saturate(100%);
-    mix-blend-mode: screen; /* or 'lighten' */
-}
-body {
-    background: linear-gradient(to bottom, black, #8B0000);
+#the-header img {
+  height: 60px;
+  width: auto;
   margin: 0;
+  filter: contrast(100%) brightness(100%) saturate(100%);
 }
 
+html {
+  height: 100%;
+}
+
+body {
+  /* We start black, move to deep red in the middle, and end in a very dark red (not pure black) at the bottom. 
+     This removes the "hard line" where the color stops abruptly. */
+  background: linear-gradient(180deg, 
+    #000000 0%, 
+    #450a0a 40%, 
+    #7f1d1d 70%, 
+    #290505 100%
+  );
+  
+  /* Ensure it covers the whole screen even if content is short */
+  min-height: 100vh;
+  background-attachment: fixed;
+  margin: 0;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
 
 .my-form {
-  padding: 20px;
+  max-width: 420px;
+  /* Center the form vertically slightly better */
+  margin: 40px auto 60px;
+  padding: 40px;
   text-align: center;
-  
+  background: rgba(0, 0, 0, 0.65); /* Slightly darker glass for better contrast */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px);
 }
 
+/* FIX 2: Spacing Between Placeholders */
 .my-form .form-group {
-  padding-bottom: 15px;
+  margin: 0;
+  text-align: center;
+  /* Increased from 8px to 20px for clear separation */
+  padding-bottom: 20px; 
+  width: 100%;
 }
 
-.my-form label {
-  display: block;  /* This makes the label take up the full width of its container, so that the input field will be on a new line */
-  margin-bottom: 5px;
-}
-
+/* Remove default margins on inputs just in case */
 .my-form input {
+  width: 100%;
+  padding: 14px 16px;
   box-sizing: border-box;
+  background-color: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 15px;
+  transition: all 0.25s ease;
+  display: block; /* Ensures they stack cleanly */
 }
 
+.my-form input::placeholder {
+  color: #aaaaaa;
+  opacity: 0.7;
+}
+
+.my-form input:focus {
+  outline: none;
+  border-color: #e50914;
+  background-color: #252525;
+  box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.4);
+}
 
 .my-form .submit-button {
-  padding: 10px 20px;
-  background-color: black;
-  color: red;
+  width: 100%;
+  padding: 14px 20px;
+  margin-top: 10px;
+  background: linear-gradient(180deg, #f40612 0%, #b20710 100%);
+  color: #ffffff;
   border: none;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
+  text-transform: uppercase;
 }
 
 .my-form .submit-button:hover {
-  background-color: red;
-  color: black;
+  background: linear-gradient(180deg, #ff0a16 0%, #d6101a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(229, 9, 20, 0.5);
+}
+
+.my-form .submit-button:active {
+  transform: translateY(0);
 }
