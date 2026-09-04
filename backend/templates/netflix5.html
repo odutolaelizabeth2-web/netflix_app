@@ -14,11 +14,9 @@
 {% block content %}
 
 <nav role="navigation" aria-label="Main">
-    <a href="/" class="logo">NETFLIX</a>
-<div class="account-label">
-    My Account
-</div>
-
+    <div class="logo">NETFLIX</div>
+  <div class="account-label">
+      My Account
 </nav>
 <main>
 
@@ -52,7 +50,7 @@
         <!-- Movies Watched -->
         <div class="stats-row" aria-label="Account statistics">
             <div class="stat">
-              <strong> {{ movies|length }} </strong>
+              <strong> {{ watched_count }} </strong>
                 <small> Movies Watched </small>
             </div>
         </div>

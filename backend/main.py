@@ -1,5 +1,6 @@
 import os
 import requests
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from dotenv import load_dotenv
@@ -65,7 +66,6 @@ def home(request: Request):
         context={"request": request}
     )
 
-
 @app.get("/create-profile")
 def create_profile(request: Request):
     return templates.TemplateResponse(
@@ -73,6 +73,7 @@ def create_profile(request: Request):
         name="netflix2.html",
         context={"request": request}
     )
+
 @app.post("/created-profile")
 def create_profile(
     request: Request,
@@ -237,7 +238,7 @@ def get_movie_trailer(movie_id: int):
         data = response.json()
         videos = data.get("results", [])
 
-        # Look for an official YouTube trailer
+        # TMDB supplies the YouTube video ID; the frontend supplies the controls.
         for video in videos:
             if (
                 video.get("site") == "YouTube"
@@ -255,7 +256,7 @@ def get_movie_trailer(movie_id: int):
                 video.get("site") == "YouTube"
                 and video.get("type") == "Trailer"
             ):
-                return { "key": video.get("key"),"name": video.get("name") }
+                return {"key": video.get("key"), "name": video.get("name")}
         return {
             "key": None,
             "message": "No trailer found"
@@ -266,6 +267,22 @@ def get_movie_trailer(movie_id: int):
             detail=f"TMDB trailer request failed: {error}"
         )
 
+
+@app.post("/api/watch-history/{movie_id}")
+def add_watch_history(
+    movie_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    history = WatchHistory(
+        user_id=current_user.id,
+        movie_id=movie_id
+    )
+
+    db.add(history)
+    db.commit()
+
+    return {"message": "Movie added to watch history"}
 
 @app.get("/profile")
 def profile(
@@ -278,6 +295,12 @@ def profile(
         raise HTTPException(
             status_code=404,
             detail="User not found"
+        )
+
+    watched_count = (
+            db.query(func.count(WatchHistory.id))
+            .filter(WatchHistory.user_id == current_user.id)
+            .scalar()
         )
 
     watch_history = (
@@ -293,10 +316,8 @@ def profile(
                 f"{TMDB_URL}/movie/{history.movie_id}",
                 params={
                     "api_key": TMDB_API_KEY,
-                    "language": "en-US"
-                },
-                timeout=10
-            )
+                    "language": "en-US" },
+                timeout=10  )
 
             response.raise_for_status()
             movie_data = response.json()
@@ -317,8 +338,10 @@ def profile(
         name="netflix5.html",
         context={
             "request": request,
-            "user": user,
-            "movies": movies} )
+            "user": current_user,
+            "watched_count": watched_count,
+            "movies": movies
+        })
 
 
 @app.exception_handler(StarletteHTTPException)
