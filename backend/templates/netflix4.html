@@ -2,41 +2,275 @@
 
 {% block extra_css %}
 
-<link rel="stylesheet"
-    href="{{ url_for('static', path='netflix4.css') }}">
 <link
     rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    href="{{ url_for('static', path='netflix4.css') }}"
+>
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
 {% endblock extra_css %}
 
 {% block content %}
 
-<header>
-    <div class="netflix-logo"> NETFLIX </div>
-    <div
-        class="profile"
-        onclick='window.location.href="/profile";'>
-        <i class="fa-solid fa-circle-user"></i>
-    </div>
-</header>
+<!-- ================= NAVBAR ================= -->
 
-<main>
+<header class="navbar">
 
-<div class="search-area">
-    <input
-        type="text"
-        name="movie-search"
-        id="movie-search"
-        placeholder="NEW"
-        autocomplete="off">
-    <button id="search-button"> Search </button>
+<div class="nav-left">
+
+    <!-- Netflix Logo -->
+    <a href="/movies" class="logo">
+        NETFLIX
+    </a>
+
+
+    <!-- Navigation Links -->
+    <nav class="nav-links">
+
+        <a href="/movies">
+            Home
+        </a>
+
+        <a href="#">
+            TV Shows
+        </a>
+
+        <a href="/movies">
+            Movies
+        </a>
+
+        <a href="#">
+            New & Popular
+        </a>
+
+        <a href="#">
+            My List
+        </a>
+
+        <a href="#">
+            Browse by Languages
+        </a>
+
+    </nav>
+
 </div>
 
-<div id="movie-results"></div>
+
+
+<!-- ================= RIGHT SIDE ================= -->
+
+<div class="nav-right">
+
+    <!-- Notification -->
+    <i class="fa-regular fa-bell bell-icon"></i>
+
+
+    <!-- Profile -->
+    <a
+        href="/profile"
+        title="My Profile"
+    >
+
+        <i class="fa-solid fa-circle-user profile-icon"></i>
+
+    </a>
+
+
+    <!-- Sign Out -->
+    <a
+        href="/logout"
+        class="sign-out"
+    >
+        Sign Out
+    </a>
+
+</div>
+
+</header>
+
+<!-- ================= SEARCH ================= -->
+
+<section class="search-section">
+
+<form
+    id="search-form"
+    class="search-box"
+>
+
+    <input
+        type="text"
+        id="search"
+        name="movie-search"
+        placeholder="Titles, people, genres"
+        autocomplete="off"
+    >
+
+    <button type="submit">
+        Search
+    </button>
+
+</form>
+
+</section>
+
+<!-- ================= HERO SECTION ================= -->
+
+<section class="hero">
+
+<div class="hero-content">
+
+    <h1>
+        Stranger Things
+    </h1>
+
+
+    <p>
+        When a young boy vanishes, a small town uncovers a mystery
+        involving secret experiments, terrifying supernatural forces
+        and one strange little girl.
+    </p>
+
+
+    <div class="hero-buttons">
+
+        <button class="play-btn">
+
+            <i class="fa-solid fa-play"></i>
+
+            Play
+
+        </button>
+
+
+        <button class="info-btn">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            More Info
+
+        </button>
+
+    </div>
+
+</div>
+
+</section>
+
+<!-- ================= MOVIES ================= -->
+
+<main id="movie-container">
+
+<p class="message">
+    Loading movies...
+</p>
+
 </main>
 
+<!-- ================= TRAILER POP-UP ================= -->
+
+<div
+    id="trailer-modal"
+    class="trailer-modal"
+>
+
+<div class="trailer-content">
+
+    <!-- Close Button -->
+    <button
+        id="trailer-close"
+        class="trailer-close"
+        title="Close"
+    >
+        &times;
+    </button>
+
+
+    <!-- Trailer Title -->
+    <h3
+        id="trailer-title"
+        class="trailer-title"
+    ></h3>
+
+
+    <!-- Trailer Video -->
+    <div
+        id="trailer-video"
+        class="trailer-video"
+    >
+
+        <iframe
+            id="trailer-frame"
+            src=""
+            title="Trailer"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowfullscreen
+        ></iframe>
+
+    </div>
+
+
+    <!-- Trailer Message -->
+    <p
+        id="trailer-message"
+        class="trailer-message"
+    ></p>
+
+
+    <!-- Trailer Footer -->
+    <div class="trailer-footer">
+
+        <span
+            id="trailer-saved"
+            class="trailer-saved"
+        >
+
+            <i class="fa-solid fa-check"></i>
+
+            Added to your watch history
+
+        </span>
+
+
+        <a
+            id="trailer-link"
+            class="trailer-link"
+            href="#"
+            target="_blank"
+            rel="noopener"
+        >
+
+            Not playing? Open on YouTube
+
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+        </a>
+
+    </div>
+
+</div>
+
+</div>
+
+<!-- ================= FOOTER ================= -->
+
 <footer>
-<a href="/" class="sign-out"> Sign Out </a>
+
+<a
+    href="/logout"
+    class="sign-out"
+>
+    Sign Out
+</a>
+
 </footer>
 
 {% endblock content %}
@@ -44,4 +278,5 @@
 {% block extra_js %}
 
 <script src="{{ url_for('static', path='netflix4.js') }}"></script>
+
 {% endblock extra_js %}

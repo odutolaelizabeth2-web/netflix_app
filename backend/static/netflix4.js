@@ -1,352 +1,487 @@
+const movieContainer = document.getElementById("movie-container");
+const searchInput = document.getElementById("search");
+const searchForm = document.getElementById("search-form");
 
-const searchBar = document.getElementById("movie-search");
-const searchButton = document.getElementById("search-button");
-const movieResults = document.getElementById("movie-results");
+const trailerModal = document.getElementById("trailer-modal");
+const trailerVideo = document.getElementById("trailer-video");
+const trailerFrame = document.getElementById("trailer-frame");
+const trailerTitle = document.getElementById("trailer-title");
+const trailerMessage = document.getElementById("trailer-message");
+const trailerSaved = document.getElementById("trailer-saved");
+const trailerLink = document.getElementById("trailer-link");
+const trailerClose = document.getElementById("trailer-close");
 
-let currentTrailerModal = null;
+// ================= TRAILER POP-UP =================
+
+function openTrailer(title, youtubeKey, message) {
 
 
-/* =================================
-   SHOW MOVIE TRAILER
-================================= */
+trailerTitle.textContent = title;
 
-async function showmovie(movie) {
 
-    console.log("Movie selected:", movie);
+if (youtubeKey) {
 
-    // Prevent opening multiple trailers
-    if (currentTrailerModal) {
-        closeTrailer();
-    }
+    trailerFrame.src =
+        `https://www.youtube.com/embed/${youtubeKey}?autoplay=1&rel=0`;
 
-    try {
+    trailerVideo.style.display = "block";
 
-        const response = await fetch(
-            `/api/movies/${movie.id}/trailer`
-        );
+    trailerLink.href =
+        `https://www.youtube.com/watch?v=${youtubeKey}`;
 
-        if (!response.ok) {
-            throw new Error("Unable to load trailer.");
-        }
+    trailerLink.style.display = "inline";
 
-        const trailer = await response.json();
+    trailerMessage.textContent = "";
 
-        console.log("Trailer:", trailer);
+} else {
 
-        if (!trailer.key) {
-            alert("Sorry, no trailer is available for this movie.");
-            return;
-        }
+    trailerFrame.src = "";
 
-        openTrailer(movie, trailer.key);
+    trailerVideo.style.display = "none";
 
-    } catch (error) {
+    trailerLink.style.display = "none";
 
-        console.error("Trailer error:", error);
+    trailerMessage.textContent =
+        message ||
+        "Sorry, no trailer is available for this title.";
 
-        alert("Unable to load the trailer right now.");
-    }
 }
 
 
-/* =================================
-   OPEN TRAILER
-================================= */
+trailerModal.classList.add("open");
 
-function openTrailer(movie, trailerKey) {
-
-    const modal = document.createElement("div");
-
-    modal.className = "trailer-modal active";
-
-    modal.innerHTML = `
-        <div class="trailer-box">
-
-            <button
-                class="close-trailer"
-                type="button"
-                aria-label="Close trailer">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="trailer-content">
-
-                <h2>${movie.title}</h2>
-
-                <p class="trailer-status">
-                    Official Trailer
-                </p>
-
-                <div class="video-container">
-
-                    <iframe
-                        src="https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0"
-                        title="${movie.title} Trailer"
-                        allow="autoplay; encrypted-media; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-
-                </div>
-
-            </div>
-
-        </div>
-     `;
-
-    document.body.appendChild(modal);
-
-    currentTrailerModal = modal;
-
-    // Prevent background page from scrolling
-    document.body.style.overflow = "hidden";
+document.body.style.overflow = "hidden";
 
 
-    /* Close button */
-
-    const closeButton =
-        modal.querySelector(".close-trailer");
-
-    closeButton.addEventListener("click", closeTrailer);
-
-
-    /* Close when clicking outside the trailer box */
-
-    modal.addEventListener("click", function(event) {
-
-        if (event.target === modal) {
-            closeTrailer();
-        }
-
-    });
 }
 
-
-/* =================================
-   CLOSE TRAILER
-================================= */
+// ================= CLOSE TRAILER =================
 
 function closeTrailer() {
 
-    if (currentTrailerModal) {
 
-        /*
-         * Removing the iframe stops the YouTube
-         * video and therefore stops the audio too.
-         */
-        currentTrailerModal.remove();
+trailerFrame.src = "";
 
-        currentTrailerModal = null;
+trailerSaved.style.display = "none";
+
+trailerModal.classList.remove("open");
+
+document.body.style.overflow = "";
+
+}
+
+trailerClose.addEventListener(
+"click",
+closeTrailer
+);
+
+// Click outside the trailer to close it
+
+trailerModal.addEventListener(
+"click",
+(e) => {
+
+
+    if (e.target === trailerModal) {
+
+        closeTrailer();
+
     }
 
-    // Allow the page to scroll again
-    document.body.style.overflow = "";
 }
 
 
-/* =================================
-   ESC KEY
-================================= */
+);
 
-document.addEventListener("keydown", function(event) {
+// Escape key closes trailer
 
-    if (event.key === "Escape") {
+document.addEventListener(
+"keydown",
+(e) => {
+
+
+    if (e.key === "Escape") {
+
         closeTrailer();
+
     }
 
-});
+}
 
 
-/* =================================
-   SEARCH BUTTON
-================================= */
-
-searchButton.addEventListener(
-    "click",
-    searchMovies
 );
 
+// ================= WATCH HISTORY =================
 
-/*ENTER KEY SEARCH */
+async function markAsWatched(movieId) {
 
-searchBar.addEventListener(
-    "keydown",
-    function(event) {
 
-        if (event.key === "Enter") {
-            searchMovies();
+try {
+
+    const res = await fetch(
+        `/api/watch/${movieId}`,
+        {
+            method: "POST"
         }
+    );
+
+
+    if (res.ok) {
+
+        trailerSaved.style.display = "inline";
+
+    }
+
+} catch (error) {
+
+    console.error(
+        "Could not save to watch history:",
+        error
+    );
+
+}
+
+
+}
+
+// ================= PLAY MOVIE TRAILER =================
+
+async function playMovieTrailer(movie) {
+
+
+trailerSaved.style.display = "none";
+
+
+// Show loading message first
+openTrailer(
+    movie.title,
+    null,
+    "Loading trailer..."
+);
+
+
+// Save movie to watch history
+markAsWatched(movie.id);
+
+
+try {
+
+    const res = await fetch(
+        `/api/movies/${movie.id}/trailer`
+    );
+
+
+    const data = await res.json();
+
+
+    if (!res.ok) {
+
+        throw new Error(
+            data.detail ||
+            "Trailer request failed"
+        );
+
+    }
+
+
+    openTrailer(
+        movie.title,
+        data.key
+    );
+
+
+} catch (error) {
+
+    console.error(
+        "Trailer failed:",
+        error
+    );
+
+
+    openTrailer(
+        movie.title,
+        null
+    );
+
+}
+
+
+}
+
+// ================= HERO PLAY BUTTON =================
+
+document
+.querySelector(".play-btn")
+.addEventListener(
+"click",
+() => {
+
+
+        trailerSaved.style.display = "none";
+
+
+        openTrailer(
+            "Stranger Things",
+            "b9EkMc79ZSU"
+        );
 
     }
 );
 
 
-/* =================================
-   SEARCH MOVIES
-================================= */
+// ================= CREATE MOVIE POSTER =================
 
-async function searchMovies() {
-
-    const search = searchBar.value.trim();
+function createPoster(movie) {
 
 
-    if (search === "") {
-
-        movieResults.innerHTML = "";
-
-        return;
-    }
+const poster =
+    document.createElement("img");
 
 
-    movieResults.innerHTML = `
-        <p>Loading movies...</p>
-    `;
+poster.src =
+    `https://image.tmdb.org/t/p/w300${movie.poster_path}`;
 
 
-    try {
+poster.alt =
+    movie.title;
 
-        const response = await fetch(
-            `/api/movies?search=${encodeURIComponent(search)}`
+
+poster.title =
+    movie.title;
+
+
+// Lazy loading
+poster.loading = "lazy";
+
+
+poster.decoding = "async";
+
+
+poster.className =
+    "movie-poster";
+
+
+// Click poster = save + trailer
+poster.addEventListener(
+    "click",
+    () => playMovieTrailer(movie)
+);
+
+
+return poster;
+
+}
+
+// ================= LOAD MOVIES BY GENRE =================
+
+async function loadMoviesByGenres() {
+
+
+try {
+
+    const res =
+        await fetch(
+            "/api/movies-by-genres"
         );
 
 
-        if (!response.ok) {
-            throw new Error("Unable to load movies.");
-        }
-
-        const movies = await response.json();
+    const data =
+        await res.json();
 
 
-        if (movies.length === 0) {
+    if (!res.ok) {
 
-            movieResults.innerHTML = `
-                <p>No movies found.</p>
-            `;
+        movieContainer.innerHTML =
+            `<p class="message">
+                Error loading movies
+            </p>`;
 
-            return;
-        }
+        return;
 
-
-        movieResults.innerHTML = `
-
-            <h2>
-                ${
-                    search.toLowerCase() === "new"
-                        ? "New Movies"
-                        : `Search results for "${search}"`
-                }
-            </h2>
-
-            <div class="movie-grid">
-
-                ${movies.map(movie => `
-
-                    <div
-                        class="movie-card"
-                        data-movie-id="${movie.id}"
-                    >
-
-                        <img
-                            src="${
-                                movie.poster_path
-                                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-                                    : ""
-                            }"
-                            alt="${movie.title}"
-                        >
-
-                        <h3>
-                            ${movie.title}
-                        </h3>
-
-                        <p>
-                            ${
-                                movie.release_date
-                                    ? movie.release_date.substring(0, 4)
-                                    : "Unknown"
-                            }
-                        </p>
-
-                    </div>
-
-                `).join("")}
-
-            </div>
-        `;
+    }
 
 
-        /* =================================
-           ADD CLICK EVENTS TO MOVIE CARDS
-        ================================= */
+    movieContainer.innerHTML = "";
 
-        document
-            .querySelectorAll(".movie-card")
-            .forEach(card => {
 
-                card.addEventListener(
-                    "click",
-                    function() {
+    data.forEach(
+        (genreBlock) => {
 
-                        const movieId =
-                            Number(card.dataset.movieId);
+            // Genre title
+            const genreTitle =
+                document.createElement("h2");
 
-                        const movie =
-                            movies.find(
-                                movie => movie.id === movieId
-                            );
 
-                        if (movie) {
-                            showmovie(movie);
-                        }
+            genreTitle.textContent =
+                genreBlock.genre;
+
+
+            genreTitle.className =
+                "genre-title";
+
+
+            movieContainer.appendChild(
+                genreTitle
+            );
+
+
+            // Movie row
+            const row =
+                document.createElement("div");
+
+
+            row.className =
+                "movie-row";
+
+
+            // Add posters
+            genreBlock.movies.forEach(
+                (movie) => {
+
+                    if (!movie.poster_path) {
+
+                        return;
 
                     }
-                );
-
-            });
 
 
-    } catch (error) {
+                    row.appendChild(
+                        createPoster(movie)
+                    );
 
-        movieResults.innerHTML = `
-            <p>
-                Unable to load movies right now.
-                Please try again.
-            </p>
-        `;
+                }
+            );
 
-        console.error("Search error:", error);
-    }
+
+            movieContainer.appendChild(
+                row
+            );
+
+        }
+    );
+
+
+} catch (error) {
+
+    console.error(
+        "Failed to load movies:",
+        error
+    );
+
+
+    movieContainer.innerHTML =
+        `<p class="message">
+            Something went wrong
+        </p>`;
+
 }
 
 
-const loginForm = document.getElementById("login-form");
-const loginError = document.getElementById("login-error");
+}
 
-loginForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+// ================= INITIAL MOVIE LOAD =================
 
-    loginError.textContent = "";
+loadMoviesByGenres();
 
-    const formData = new FormData(loginForm);
+// ================= SEARCH =================
+
+searchForm.addEventListener(
+"submit",
+async (e) => {
+
+
+    e.preventDefault();
+
+
+    const query =
+        searchInput.value.trim();
+
+
+    // Empty search
+    if (!query) {
+
+        loadMoviesByGenres();
+
+        return;
+
+    }
+
 
     try {
-        const response = await fetch("/login", {
-            method: "POST",
-            body: formData
-        });
 
-        const data = await response.json();
+        const res =
+            await fetch(
+                `/api/movies?search=${encodeURIComponent(query)}`
+            );
 
-        if (!response.ok) {
-            loginError.textContent = data.message;
-            return;
-        }
 
-        if (data.success) {
-            window.location.href = data.redirect;
-        }
+        const data =
+            await res.json();
+
+
+        movieContainer.innerHTML = "";
+
+
+        // Search title
+        const title =
+            document.createElement("h2");
+
+
+        title.textContent =
+            `Results for "${query}"`;
+
+
+        title.className =
+            "genre-title";
+
+
+        movieContainer.appendChild(
+            title
+        );
+
+
+        // Search results grid
+        const grid =
+            document.createElement("div");
+
+
+        grid.className =
+            "movie-grid";
+
+
+        data.forEach(
+            (movie) => {
+
+                if (!movie.poster_path) {
+
+                    return;
+
+                }
+
+
+                grid.appendChild(
+                    createPoster(movie)
+                );
+
+            }
+        );
+
+
+        movieContainer.appendChild(
+            grid
+        );
+
 
     } catch (error) {
-        loginError.textContent = "Something went wrong. Please try again.";
-        console.error(error);
+
+        console.error(
+            "Search failed:",
+            error
+        );
+
     }
-});
+
+}
+
+
+);

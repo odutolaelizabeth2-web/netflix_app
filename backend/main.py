@@ -1,6 +1,9 @@
 import os
+import time
 import requests
+from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, Request, HTTPException, Form, status
@@ -16,7 +19,12 @@ from model import User, Avatar, WatchHistory, Rating
 
 
 load_dotenv()
+
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+
+print("TMDB API KEY LOADED:", bool(TMDB_API_KEY))
+print("TMDB API KEY LENGTH:", len(TMDB_API_KEY) if TMDB_API_KEY else 0)
+
 TMDB_URL = "https://api.themoviedb.org/3"
 
 app = FastAPI()
@@ -57,6 +65,7 @@ def get_current_user(
         )
     return user
 
+
 @app.get("/")
 def home(request: Request):
     return templates.TemplateResponse(
@@ -73,6 +82,8 @@ def create_profile(request: Request):
         name="netflix2.html",
         context={"request": request}
     )
+
+
 @app.post("/created-profile")
 def create_profile(
     request: Request,
@@ -128,6 +139,7 @@ def create_profile(
         status_code=303
     )
 
+
 @app.get("/welcome")
 def welcome_back(request: Request):
     return templates.TemplateResponse(
@@ -135,6 +147,7 @@ def welcome_back(request: Request):
         name="netflix3.html",
         context={"request": request}
     )
+
 
 @app.post("/login")
 def login(
@@ -157,13 +170,20 @@ def login(
                 "request": request,
                 "error": "Invalid Credentials"
             },
-            status_code=400 )
+            status_code=400)
 
     request.session["user_id"] = user.id
     return RedirectResponse(
         url="/movies",
         status_code=303
     )
+
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/", status_code=303)
+
 
 @app.get("/movies")
 def movies_page(
@@ -179,6 +199,7 @@ def movies_page(
             "user": current_user
         }
     )
+
 
 @app.get("/api/movies")
 def search_movies(search: str = ""):
@@ -232,7 +253,7 @@ def get_movie_trailer(movie_id: int):
         response = requests.get(
             url,
             params=params,
-            timeout=10 )
+            timeout=10)
         response.raise_for_status()
         data = response.json()
         videos = data.get("results", [])
@@ -242,20 +263,20 @@ def get_movie_trailer(movie_id: int):
             if (
                 video.get("site") == "YouTube"
                 and video.get("type") == "Trailer"
-                and video.get("official") is True ):
+                and video.get("official") is True
+            ):
                 return {
                     "key": video.get("key"),
                     "name": video.get("name")
                 }
 
-        # If there isn't an official trailer,
-        # look for any YouTube trailer
+        # If there isn't an official trailer, look for any YouTube trailer
         for video in videos:
             if (
                 video.get("site") == "YouTube"
                 and video.get("type") == "Trailer"
             ):
-                return { "key": video.get("key"),"name": video.get("name") }
+                return {"key": video.get("key"), "name": video.get("name")}
         return {
             "key": None,
             "message": "No trailer found"
@@ -267,11 +288,122 @@ def get_movie_trailer(movie_id: int):
         )
 
 
+# ***** THIS IS THE FIX FOR "NOT SAVING IN DATABASE" *****
+@app.post("/api/watch/{movie_id}")
+def mark_as_watched(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+
+    # Check if this movie is already in this user's watch history
+    existing = (
+        db.query(WatchHistory)
+        .filter(
+            WatchHistory.user_id == current_user.id,
+            WatchHistory.movie_id == movie_id,
+        )
+        .first()
+    )
+
+    if not existing:
+        watch_entry = WatchHistory(
+            user_id=current_user.id,
+            movie_id=movie_id,
+            watched_at=datetime.utcnow(),
+        )
+        db.add(watch_entry)
+        db.commit()
+
+    return {"success": True, "message": "Movie marked as watched"}
+
+
+# TMDB's official genre IDs (these never change)
+HOMEPAGE_GENRES = [
+    ("Action", 28),
+    ("Adventure", 12),
+    ("Comedy", 35),
+    ("Drama", 18),
+    ("Horror", 27),
+    ("Romance", 10749),
+    ("Animation", 16),
+    ("Science Fiction", 878),
+    ("Thriller", 53),
+    ("Fantasy", 14),
+    ("Crime", 80),
+    ("Family", 10751),
+]
+
+# Remember the result so we don't ask TMDB again on every page load
+genre_cache = {"data": None, "saved_at": 0}
+CACHE_SECONDS = 30 * 60  # 30 minutes
+
+
+def fetch_genre_movies(genre):
+    """Get the most popular movies for ONE genre from TMDB."""
+    genre_name, genre_id = genre
+    try:
+        response = requests.get(
+            f"{TMDB_URL}/discover/movie",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "en-US",
+                "sort_by": "popularity.desc",
+                "with_genres": genre_id,
+                "page": 1,
+                "include_adult": "false",
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        results = response.json().get("results", [])
+    except requests.exceptions.RequestException:
+        return None
+
+    # Only send the page what it needs, and skip movies without a poster
+    movies = [
+        {
+            "id": movie["id"],
+            "title": movie.get("title"),
+            "poster_path": movie.get("poster_path"),
+        }
+        for movie in results
+        if movie.get("poster_path")
+    ]
+    return {"genre": genre_name, "movies": movies[:15]}
+
+
+@app.get("/api/movies-by-genres")
+def movies_by_genres():
+    # 1. If we fetched recently, return the saved copy instantly
+    is_fresh = (time.time() - genre_cache["saved_at"]) < CACHE_SECONDS
+    if genre_cache["data"] and is_fresh:
+        return genre_cache["data"]
+
+    # 2. Otherwise ask TMDB for ALL genres at the same time (not one after another)
+    with ThreadPoolExecutor(max_workers=len(HOMEPAGE_GENRES)) as executor:
+        results = list(executor.map(fetch_genre_movies, HOMEPAGE_GENRES))
+
+    data = [row for row in results if row and row["movies"]]
+
+    if not data:
+        raise HTTPException(
+            status_code=500,
+            detail="Could not load movies from TMDB"
+        )
+
+    # 3. Save it for next time
+    genre_cache["data"] = data
+    genre_cache["saved_at"] = time.time()
+    return data
+
+
 @app.get("/profile")
 def profile(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)):
+        request: Request,
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)):
 
     user = current_user
     if not user:
@@ -318,7 +450,8 @@ def profile(
         context={
             "request": request,
             "user": user,
-            "movies": movies} )
+            "movies": movies
+        })
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -328,12 +461,13 @@ def general_http_exception_handler(request: Request, exception: StarletteHTTPExc
         if exception.detail
         else "An error occurred. Please check your request and try again."
     )
-    if request.url.path.startswith ("/api"):
-        return JSONResponse (
-            status_code= exception.status_code,
-            content= {"detail":message},
+    if request.url.path.startswith("/api"):
+        return JSONResponse(
+            status_code=exception.status_code,
+            content={"detail": message},
         )
-    return templates.TemplateResponse (request= request,
+    return templates.TemplateResponse(
+        request=request,
         name="error.html",
         context={
             "request": request,
@@ -341,23 +475,25 @@ def general_http_exception_handler(request: Request, exception: StarletteHTTPExc
             "title": exception.status_code,
             "message": message
         },
-        status_code= exception.status_code,
+        status_code=exception.status_code,
     )
 
+
 @app.exception_handler(RequestValidationError)
-def validation_exception_handler (request: Request, exception: RequestValidationError):
+def validation_exception_handler(request: Request, exception: RequestValidationError):
     if request.url.path.startswith("/api"):
-        return JSONResponse (
-            status_code= status.HTTP_422_UNPROCESSABLE_CONTENT,
-            content= {"detail": exception.errors()}
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            content={"detail": exception.errors()}
         )
-    return templates.TemplateResponse (
-        request=request, name="error.html",
+    return templates.TemplateResponse(
+        request=request,
+        name="error.html",
         context={
             "request": request,
-            "status_code":status.HTTP_422_UNPROCESSABLE_CONTENT,
-            "title":status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "status_code": status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "title": status.HTTP_422_UNPROCESSABLE_CONTENT,
             "message": "Invalid request. Please check your input and try again.",
         },
-        status_code= status.HTTP_422_UNPROCESSABLE_CONTENT,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
