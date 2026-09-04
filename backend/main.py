@@ -1,6 +1,7 @@
 import os
 import time
 import requests
+from sqlalchemy import func
 from concurrent.futures import ThreadPoolExecutor
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -258,7 +259,7 @@ def get_movie_trailer(movie_id: int):
         data = response.json()
         videos = data.get("results", [])
 
-        # Look for an official YouTube trailer
+        # TMDB supplies the YouTube video ID; the frontend supplies the controls.
         for video in videos:
             if (
                 video.get("site") == "YouTube"
@@ -276,6 +277,7 @@ def get_movie_trailer(movie_id: int):
                 video.get("site") == "YouTube"
                 and video.get("type") == "Trailer"
             ):
+                return {"key": video.get("key"), "name": video.get("name")}
                 return {"key": video.get("key"), "name": video.get("name")}
         return {
             "key": None,
@@ -367,6 +369,8 @@ def fetch_genre_movies(genre):
             "id": movie["id"],
             "title": movie.get("title"),
             "poster_path": movie.get("poster_path"),
+            "overview": movie.get("overview"),
+            "release_date": movie.get("release_date"),
         }
         for movie in results
         if movie.get("poster_path")
@@ -399,6 +403,151 @@ def movies_by_genres():
     return data
 
 
+def format_runtime(minutes):
+    """Turn 109 into '1h 49m'."""
+    if not minutes:
+        return ""
+    hours, mins = divmod(minutes, 60)
+    if hours and mins:
+        return f"{hours}h {mins}m"
+    if hours:
+        return f"{hours}h"
+    return f"{mins}m"
+
+
+def pick_trailer_key(videos):
+    """Pick the best YouTube trailer from TMDB's video list."""
+    youtube = [v for v in videos if v.get(
+        "site") == "YouTube" and v.get("key")]
+    for video in youtube:
+        if video.get("type") == "Trailer" and video.get("official"):
+            return video["key"]
+    for video in youtube:
+        if video.get("type") == "Trailer":
+            return video["key"]
+    for video in youtube:
+        if video.get("type") == "Teaser":
+            return video["key"]
+    return None
+
+
+@app.get("/movies/{movie_id}")
+def movie_details(
+    movie_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    # One TMDB request that also brings credits, age ratings and videos
+    try:
+        response = requests.get(
+            f"{TMDB_URL}/movie/{movie_id}",
+            params={
+                "api_key": TMDB_API_KEY,
+                "language": "en-US",
+                "append_to_response": "credits,release_dates,videos",
+            },
+            timeout=10,
+        )
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Movie not found")
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"TMDB request failed: {error}"
+        )
+
+    # Release date: 2026-05-15  ->  05/15/2026
+    raw_date = data.get("release_date") or ""
+    year = raw_date[:4]
+    try:
+        release_date = datetime.strptime(
+            raw_date, "%Y-%m-%d").strftime("%m/%d/%Y")
+    except ValueError:
+        release_date = ""
+
+    # Age rating (R, PG-13, ...) from the US release info
+    certification = ""
+    for country in data.get("release_dates", {}).get("results", []):
+        if country.get("iso_3166_1") == "US":
+            for release in country.get("release_dates", []):
+                if release.get("certification"):
+                    certification = release["certification"]
+                    break
+            break
+
+    # Genres: "Horror and Thriller"
+    genre_names = [g["name"] for g in data.get("genres", [])]
+    if len(genre_names) > 1:
+        genres = ", ".join(genre_names[:-1]) + " and " + genre_names[-1]
+    else:
+        genres = genre_names[0] if genre_names else ""
+
+    # User score: 8.2 -> 82
+    score = round((data.get("vote_average") or 0) * 10)
+    if score >= 70:
+        score_class = "high"
+    elif score >= 40:
+        score_class = "mid"
+    elif score > 0:
+        score_class = "low"
+    else:
+        score_class = "none"
+
+    # Director / Writer credits (one line per person)
+    wanted_jobs = ["Director", "Writer", "Screenplay", "Story"]
+    people = {}
+    for person in data.get("credits", {}).get("crew", []):
+        if person.get("job") in wanted_jobs:
+            jobs = people.setdefault(person["name"], [])
+            if person["job"] not in jobs:
+                jobs.append(person["job"])
+    crew = [{"name": name, "jobs": ", ".join(
+        jobs)} for name, jobs in people.items()]
+    crew.sort(key=lambda p: 0 if "Director" in p["jobs"] else 1)
+    crew = crew[:4]
+
+    poster_path = data.get("poster_path")
+    backdrop_path = data.get("backdrop_path")
+    movie = {
+        "id": data.get("id"),
+        "title": data.get("title") or "Untitled",
+        "year": year,
+        "poster": (
+            f"https://image.tmdb.org/t/p/w500{poster_path}"
+            if poster_path else "/static/default-poster.jpg"
+        ),
+        "backdrop": (
+            f"https://image.tmdb.org/t/p/original{backdrop_path}"
+            if backdrop_path else (
+                f"https://image.tmdb.org/t/p/w780{poster_path}"
+                if poster_path else "/static/default-poster.jpg"
+            )
+        ),
+        "release_date": release_date,
+        "certification": certification,
+        "genres": genres,
+        "runtime": format_runtime(data.get("runtime")),
+        "score": score,
+        "score_class": score_class,
+        "tagline": data.get("tagline") or "",
+        "overview": data.get("overview") or "",
+        "crew": crew,
+        "trailer_key": pick_trailer_key(data.get("videos", {}).get("results", [])),
+    }
+
+    return templates.TemplateResponse(
+        request=request,
+        name="netflix6.html",
+        context={
+            "request": request,
+            "user": current_user,
+            "movie": movie,
+        }
+    )
+
+
 @app.get("/profile")
 def profile(
         request: Request,
@@ -412,14 +561,20 @@ def profile(
             detail="User not found"
         )
 
+    watched_count = (
+        db.query(func.count(WatchHistory.id))
+        .filter(WatchHistory.user_id == current_user.id)
+        .scalar()
+    )
+
     watch_history = (
         db.query(WatchHistory)
         .filter(WatchHistory.user_id == user.id)
         .order_by(WatchHistory.watched_at.desc())
         .all()
     )
-    movies = []
-    for history in watch_history:
+
+    def fetch_watched_movie(history):
         try:
             response = requests.get(
                 f"{TMDB_URL}/movie/{history.movie_id}",
@@ -427,12 +582,11 @@ def profile(
                     "api_key": TMDB_API_KEY,
                     "language": "en-US"
                 },
-                timeout=10
+                timeout=5
             )
-
             response.raise_for_status()
             movie_data = response.json()
-            movies.append({
+            return {
                 "title": movie_data.get("title"),
                 "poster": (
                     f"https://image.tmdb.org/t/p/w500"
@@ -440,9 +594,15 @@ def profile(
                     if movie_data.get("poster_path")
                     else "/static/default-poster.jpg"),
                 "watched_at": history.watched_at.strftime("%B %d, %Y")
-            })
-        except requests.exceptions.RequestException:
-            continue
+            }
+        except (requests.exceptions.RequestException, AttributeError, TypeError):
+            return None
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        movies = [
+            movie for movie in executor.map(fetch_watched_movie, watch_history)
+            if movie
+        ]
 
     return templates.TemplateResponse(
         request=request,
@@ -450,7 +610,8 @@ def profile(
         context={
             "request": request,
             "user": user,
-            "movies": movies
+            "movies": movies,
+            "watched_count": watched_count
         })
 
 

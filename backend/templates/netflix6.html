@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', path='netfliix6.css') }}"
+>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', path='netflix4.css') }}"
+>
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+{% endblock extra_css %}
+
+{% block content %}
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+<div class="nav-left">
+
+    <!-- Netflix Logo -->
+    <a
+        href="/movies"
+        class="logo"
+    >
+        NETFLIX
+    </a>
+
+
+    <!-- Navigation Links -->
+    <nav class="nav-links">
+
+        <a href="/movies">
+            Home
+        </a>
+
+        <a href="#">
+            TV Shows
+        </a>
+
+        <a href="/movies">
+            Movies
+        </a>
+
+        <a href="#">
+            New & Popular
+        </a>
+
+        <a href="#">
+            My List
+        </a>
+
+        <a href="#">
+            Browse by Languages
+        </a>
+
+    </nav>
+
+</div>
+
+
+
+<!-- ================= RIGHT SIDE ================= -->
+
+<div class="nav-right">
+
+    <!-- Notification -->
+    <i class="fa-regular fa-bell bell-icon"></i>
+
+
+    <!-- Profile -->
+    <a
+        href="/profile"
+        title="My Profile"
+    >
+
+        <i class="fa-solid fa-circle-user profile-icon"></i>
+
+    </a>
+
+
+    <!-- Sign Out -->
+    <a
+        href="/logout"
+        class="sign-out"
+    >
+        Sign Out
+    </a>
+
+</div>
+
+</header>
+
+<!-- ================= HERO ================= -->
+
+<section
+    class="hero"
+    id="hero"
+    style="background-image: linear-gradient(90deg, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.68) 42%, rgba(0, 0, 0, 0.12) 100%), url('{{ movie.backdrop }}');"
+    data-trailer-key="{{ movie.trailer_key or '' }}"
+>
+
+
+<div class="hero-content">
+
+    <h1 id="hero-title">
+        {{ movie.title }}
+    </h1>
+
+
+    <p class="hero-facts">
+        {{ movie.year }}{% if movie.genres %} · {{ movie.genres }}{% endif %}{% if movie.runtime %} · {{ movie.runtime }}{% endif %}
+    </p>
+
+    <p id="hero-overview">
+        {{ movie.overview }}
+    </p>
+
+    <div class="hero-rating" aria-label="Movie rating">
+        <strong>{{ movie.score }}%</strong>
+        <span>Audience rating</span>
+    </div>
+
+
+    <div class="hero-buttons">
+
+        <button
+            id="hero-play"
+            class="play-btn"
+        >
+
+            <i class="fa-solid fa-play"></i>
+
+            Play
+
+        </button>
+
+    </div>
+
+</div>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+
+<footer>
+
+<a
+    href="/logout"
+    class="sign-out"
+>
+    Sign Out
+</a>
+
+</footer>
+
+{% endblock content %}
+
+{% block extra_js %}
+
+<script src="{{ url_for('static', path='netflix6.js') }}?v=2"></script>
+
+{% endblock extra_js %}
